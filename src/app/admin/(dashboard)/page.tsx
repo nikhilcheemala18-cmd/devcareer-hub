@@ -6,7 +6,6 @@ import { getCategories } from "@/lib/services/categories";
 import { buildIdMap, formatDate, formatEnumLabel } from "@/lib/format";
 import { AdminStatCard } from "@/components/admin/AdminStatCard";
 import { StatusBadge } from "@/components/admin/StatusBadge";
-import { ComingSoonAction } from "@/components/admin/ComingSoonAction";
 import { EmptyState } from "@/components/ui/EmptyState";
 import {
   tableWrapperClasses,
@@ -70,7 +69,9 @@ export default async function AdminDashboardPage() {
           <Link href="/admin/posts/new" className={buttonClasses("primary")}>
             New Post
           </Link>
-          <ComingSoonAction label="New Job" note="Coming in Phase 8" />
+          <Link href="/admin/jobs/new" className={buttonClasses("primary")}>
+            New Job
+          </Link>
           <Link href="/admin/posts" className={buttonClasses("secondary")}>
             Manage Posts
           </Link>
@@ -146,6 +147,7 @@ export default async function AdminDashboardPage() {
                   <th className={tableHeadCellClasses}>Company</th>
                   <th className={tableHeadCellClasses}>Status</th>
                   <th className={tableHeadCellClasses}>Updated</th>
+                  <th className={tableHeadCellClasses}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -157,6 +159,14 @@ export default async function AdminDashboardPage() {
                       <StatusBadge status={job.status} />
                     </td>
                     <td className={tableCellClasses}>{formatDate(job.updatedAt)}</td>
+                    <td className={tableCellClasses}>
+                      <Link
+                        href={`/admin/jobs/${String(job._id)}/edit`}
+                        className="font-medium text-indigo-600 dark:text-indigo-400"
+                      >
+                        Edit
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>

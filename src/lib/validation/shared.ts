@@ -12,7 +12,22 @@ export const slugSchema = z
     "Slug must contain only lowercase letters, numbers, and hyphens."
   );
 
-export const urlSchema = z.string().trim().url("Must be a valid URL.");
+// zod's .url() only checks URL syntax — "javascript:alert(1)" and "data:..."
+// parse as valid URLs. Restricting to http(s) closes that off for every
+// caller (Post canonical URLs, Job application/source URLs) in one place.
+const SAFE_URL_PROTOCOLS = new Set(["http:", "https:"]);
+
+export const urlSchema = z
+  .string()
+  .trim()
+  .url("Must be a valid URL.")
+  .refine((value) => {
+    try {
+      return SAFE_URL_PROTOCOLS.has(new URL(value).protocol);
+    } catch {
+      return false;
+    }
+  }, "URL must start with http:// or https://.");
 
 export const objectIdStringSchema = z
   .string()

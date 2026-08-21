@@ -40,3 +40,21 @@ export function slugify(text: string): string {
 export function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
+
+/**
+ * Formats a Date for an `<input type="date">` defaultValue ("YYYY-MM-DD").
+ * Uses toISOString rather than local getters — a server running in a
+ * non-UTC timezone would otherwise shift the displayed day by one.
+ */
+export function toDateInputValue(date: Date | string | null | undefined): string {
+  if (!date) {
+    return "";
+  }
+
+  const parsed = new Date(date);
+  if (Number.isNaN(parsed.getTime())) {
+    return "";
+  }
+
+  return parsed.toISOString().slice(0, 10);
+}

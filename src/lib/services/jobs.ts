@@ -6,6 +6,7 @@ import type { EmploymentType, ContentStatus } from "@/lib/db/enums";
 import { assertValidObjectId } from "@/lib/db/objectId";
 import { NotFoundError, toAppError } from "@/lib/errors";
 import { parseInput } from "@/lib/validation/shared";
+import { escapeRegExp } from "@/lib/format";
 import {
   createJobInputSchema,
   updateJobInputSchema,
@@ -136,6 +137,10 @@ export async function getRecentJobs(limit = 5) {
 
 interface GetAllJobsOptions {
   status?: ContentStatus;
+  company?: string;
+  location?: string;
+  employmentType?: EmploymentType;
+  search?: string;
   limit?: number;
   page?: number;
 }
@@ -144,11 +149,23 @@ interface GetAllJobsOptions {
 export async function getAllJobs(options: GetAllJobsOptions = {}) {
   await connectToDatabase();
 
-  const { status, limit = 20, page = 1 } = options;
+  const { status, company, location, employmentType, search, limit = 20, page = 1 } = options;
   const filter: QueryFilter<JobDocument> = {};
 
   if (status) {
     filter.status = status;
+  }
+  if (company) {
+    filter.company = company;
+  }
+  if (location) {
+    filter.location = location;
+  }
+  if (employmentType) {
+    filter.employmentType = employmentType;
+  }
+  if (search?.trim()) {
+    filter.title = { $regex: escapeRegExp(search.trim()), $options: "i" };
   }
 
   const safeLimit = Math.min(Math.max(limit, 1), 100);

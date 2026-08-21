@@ -22,6 +22,16 @@ export const createJobInputSchema = z.object({
 
 export type CreateJobInput = z.infer<typeof createJobInputSchema>;
 
-export const updateJobInputSchema = createJobInputSchema.partial();
+// `deadline`/`featuredImage` accept `null` (not just omission) so the CMS can
+// explicitly clear them — an update payload that omits a key means "leave
+// unchanged" (see updateJob's Object.assign), which can't express "the admin
+// cleared the deadline field" without this. Mirrors Post's category handling.
+export const updateJobInputSchema = createJobInputSchema
+  .omit({ deadline: true, featuredImage: true })
+  .partial()
+  .extend({
+    deadline: z.coerce.date().nullable().optional(),
+    featuredImage: objectIdStringSchema.nullable().optional(),
+  });
 
 export type UpdateJobInput = z.infer<typeof updateJobInputSchema>;
