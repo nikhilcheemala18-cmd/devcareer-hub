@@ -2,7 +2,7 @@ import "server-only";
 import type { QueryFilter, HydratedDocument } from "mongoose";
 import { connectToDatabase } from "@/lib/db/connect";
 import { Job, type JobDocument } from "@/lib/db/models/Job";
-import type { EmploymentType } from "@/lib/db/enums";
+import type { EmploymentType, ContentStatus } from "@/lib/db/enums";
 import { assertValidObjectId } from "@/lib/db/objectId";
 import { NotFoundError, toAppError } from "@/lib/errors";
 import { parseInput } from "@/lib/validation/shared";
@@ -103,6 +103,59 @@ export async function getPublishedJobs(options: GetPublishedJobsOptions = {}) {
 
   return Job.find(filter)
     .sort({ publishedAt: -1 })
+    .skip((safePage - 1) * safeLimit)
+    .limit(safeLimit);
+}
+
+export interface JobCounts {
+  total: number;
+  published: number;
+  draft: number;
+  archived: number;
+}
+
+/** Admin-only: counts across all statuses, not just published. */
+export async function getJobCounts(): Promise<JobCounts> {
+  await connectToDatabase();
+
+  const [total, published, draft, archived] = await Promise.all([
+    Job.countDocuments({}),
+    Job.countDocuments({ status: "PUBLISHED" }),
+    Job.countDocuments({ status: "DRAFT" }),
+    Job.countDocuments({ status: "ARCHIVED" }),
+  ]);
+
+  return { total, published, draft, archived };
+}
+
+/** Admin-only: most recently updated jobs regardless of status. */
+export async function getRecentJobs(limit = 5) {
+  await connectToDatabase();
+  return Job.find({}).sort({ updatedAt: -1 }).limit(limit);
+}
+
+interface GetAllJobsOptions {
+  status?: ContentStatus;
+  limit?: number;
+  page?: number;
+}
+
+/** Admin-only: all jobs regardless of status, for /admin/jobs. */
+export async function getAllJobs(options: GetAllJobsOptions = {}) {
+  await connectToDatabase();
+
+  const { status, limit = 20, page = 1 } = options;
+  const filter: QueryFilter<JobDocument> = {};
+
+  if (status) {
+    filter.status = status;
+  }
+
+  const safeLimit = Math.min(Math.max(limit, 1), 100);
+  const safePage = Math.max(page, 1);
+
+  return Job.find(filter)
+    .sort({ updatedAt: -1 })
     .skip((safePage - 1) * safeLimit)
     .limit(safeLimit);
 }

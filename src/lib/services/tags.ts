@@ -1,6 +1,7 @@
 import "server-only";
 import { connectToDatabase } from "@/lib/db/connect";
 import { Tag } from "@/lib/db/models/Tag";
+import { Post } from "@/lib/db/models/Post";
 import { assertValidObjectId } from "@/lib/db/objectId";
 import { NotFoundError, toAppError } from "@/lib/errors";
 import { parseInput } from "@/lib/validation/shared";
@@ -68,4 +69,16 @@ export async function getTagBySlug(slug: string) {
 export async function getTags() {
   await connectToDatabase();
   return Tag.find().sort({ name: 1 });
+}
+
+/** Admin-only: number of posts referencing each tag, in a single aggregate query. */
+export async function getTagPostCounts(): Promise<Map<string, number>> {
+  await connectToDatabase();
+
+  const results = await Post.aggregate<{ _id: unknown; count: number }>([
+    { $unwind: "$tags" },
+    { $group: { _id: "$tags", count: { $sum: 1 } } },
+  ]);
+
+  return new Map(results.map((result) => [String(result._id), result.count]));
 }

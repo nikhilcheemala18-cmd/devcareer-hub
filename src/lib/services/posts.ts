@@ -2,10 +2,11 @@ import "server-only";
 import type { QueryFilter, HydratedDocument } from "mongoose";
 import { connectToDatabase } from "@/lib/db/connect";
 import { Post, type PostDocument } from "@/lib/db/models/Post";
-import type { PostType } from "@/lib/db/enums";
+import type { PostType, ContentStatus } from "@/lib/db/enums";
 import { assertValidObjectId } from "@/lib/db/objectId";
 import { NotFoundError, toAppError } from "@/lib/errors";
 import { parseInput } from "@/lib/validation/shared";
+import { escapeRegExp } from "@/lib/format";
 import {
   createPostInputSchema,
   updatePostInputSchema,
@@ -105,6 +106,72 @@ export async function getPublishedPosts(options: GetPublishedPostsOptions = {}) 
 
   return Post.find(filter)
     .sort({ publishedAt: -1 })
+    .skip((safePage - 1) * safeLimit)
+    .limit(safeLimit);
+}
+
+export interface PostCounts {
+  total: number;
+  published: number;
+  draft: number;
+  archived: number;
+}
+
+/** Admin-only: counts across all statuses, not just published. */
+export async function getPostCounts(): Promise<PostCounts> {
+  await connectToDatabase();
+
+  const [total, published, draft, archived] = await Promise.all([
+    Post.countDocuments({}),
+    Post.countDocuments({ status: "PUBLISHED" }),
+    Post.countDocuments({ status: "DRAFT" }),
+    Post.countDocuments({ status: "ARCHIVED" }),
+  ]);
+
+  return { total, published, draft, archived };
+}
+
+/** Admin-only: most recently updated posts regardless of status. */
+export async function getRecentPosts(limit = 5) {
+  await connectToDatabase();
+  return Post.find({}).sort({ updatedAt: -1 }).limit(limit);
+}
+
+interface GetAllPostsOptions {
+  status?: ContentStatus;
+  type?: PostType;
+  category?: string;
+  search?: string;
+  limit?: number;
+  page?: number;
+}
+
+/** Admin-only: all posts regardless of status, for /admin/posts. */
+export async function getAllPosts(options: GetAllPostsOptions = {}) {
+  await connectToDatabase();
+
+  const { status, type, category, search, limit = 20, page = 1 } = options;
+  const filter: QueryFilter<PostDocument> = {};
+
+  if (status) {
+    filter.status = status;
+  }
+  if (type) {
+    filter.type = type;
+  }
+  if (category) {
+    assertValidObjectId(category);
+    filter.category = category;
+  }
+  if (search?.trim()) {
+    filter.title = { $regex: escapeRegExp(search.trim()), $options: "i" };
+  }
+
+  const safeLimit = Math.min(Math.max(limit, 1), 100);
+  const safePage = Math.max(page, 1);
+
+  return Post.find(filter)
+    .sort({ updatedAt: -1 })
     .skip((safePage - 1) * safeLimit)
     .limit(safeLimit);
 }

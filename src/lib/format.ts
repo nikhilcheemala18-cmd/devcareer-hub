@@ -25,3 +25,18 @@ export function buildIdMap<T extends { _id: unknown }, K extends keyof T>(
 ): Map<string, T[K]> {
   return new Map(docs.map((doc) => [String(doc._id), doc[key]]));
 }
+
+/** "Top 10 SQL Interview Questions" -> "top-10-sql-interview-questions". */
+export function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/[\s_-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/** Escapes regex metacharacters so user input can be safely used inside a RegExp. */
+export function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}

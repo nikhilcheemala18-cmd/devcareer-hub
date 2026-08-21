@@ -1,6 +1,7 @@
 import "server-only";
 import { connectToDatabase } from "@/lib/db/connect";
 import { Category } from "@/lib/db/models/Category";
+import { Post } from "@/lib/db/models/Post";
 import { assertValidObjectId } from "@/lib/db/objectId";
 import { NotFoundError, toAppError } from "@/lib/errors";
 import { parseInput } from "@/lib/validation/shared";
@@ -68,4 +69,16 @@ export async function getCategoryBySlug(slug: string) {
 export async function getCategories() {
   await connectToDatabase();
   return Category.find().sort({ name: 1 });
+}
+
+/** Admin-only: number of posts referencing each category, in a single aggregate query. */
+export async function getCategoryPostCounts(): Promise<Map<string, number>> {
+  await connectToDatabase();
+
+  const results = await Post.aggregate<{ _id: unknown; count: number }>([
+    { $match: { category: { $ne: null } } },
+    { $group: { _id: "$category", count: { $sum: 1 } } },
+  ]);
+
+  return new Map(results.map((result) => [String(result._id), result.count]));
 }

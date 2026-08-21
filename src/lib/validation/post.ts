@@ -18,8 +18,16 @@ export const createPostInputSchema = z.object({
 
 export type CreatePostInput = z.infer<typeof createPostInputSchema>;
 
+// `category`/`featuredImage` accept `null` (not just omission) so the CMS can
+// explicitly clear a single-value reference — an update payload that simply
+// omits a key means "leave unchanged" (see updatePost's Object.assign), which
+// can't express "the admin picked '— None —'" without this.
 export const updatePostInputSchema = createPostInputSchema
-  .omit({ author: true })
-  .partial();
+  .omit({ author: true, category: true, featuredImage: true })
+  .partial()
+  .extend({
+    category: objectIdStringSchema.nullable().optional(),
+    featuredImage: objectIdStringSchema.nullable().optional(),
+  });
 
 export type UpdatePostInput = z.infer<typeof updatePostInputSchema>;
