@@ -45,6 +45,14 @@ export class DatabaseError extends AppError {
   }
 }
 
+/** Thrown when deletion is blocked because Posts/Jobs still reference the record (Category, Tag, Media). */
+export class InUseError extends AppError {
+  constructor(message: string) {
+    super(message, "IN_USE");
+    this.name = "InUseError";
+  }
+}
+
 function isDuplicateKeyError(error: unknown): boolean {
   return (
     typeof error === "object" &&
