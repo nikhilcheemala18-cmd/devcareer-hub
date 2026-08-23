@@ -5,8 +5,11 @@ import { Container } from "@/components/ui/Container";
 import { env } from "@/lib/env";
 import { LoginForm } from "./LoginForm";
 
+// Outside the (dashboard) route group, so it doesn't inherit that layout's
+// noindex default — set explicitly here instead.
 export const metadata: Metadata = {
   title: "Admin Login",
+  robots: { index: false, follow: false },
 };
 
 export const dynamic = "force-dynamic";

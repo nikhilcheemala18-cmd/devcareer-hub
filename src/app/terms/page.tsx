@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { Container } from "@/components/ui/Container";
 import { env } from "@/lib/env";
+import { buildMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildMetadata({
   title: "Terms & Conditions",
   description: `Terms & Conditions for ${env.siteName}.`,
-};
+  path: "/terms",
+});
 
 export default function TermsPage() {
   return (

@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import type { QueryFilter, HydratedDocument } from "mongoose";
 import { connectToDatabase } from "@/lib/db/connect";
 import { Post, type PostDocument } from "@/lib/db/models/Post";
@@ -69,11 +70,15 @@ export async function getPostById(id: string) {
   return Post.findById(id);
 }
 
-/** Returns null if no post matches — callers decide how to render "not found". */
-export async function getPostBySlug(slug: string) {
+/**
+ * Returns null if no post matches — callers decide how to render "not found".
+ * Wrapped in React's cache() so generateMetadata and the page body's own
+ * fetch (same slug, same request) resolve to a single DB query, not two.
+ */
+export const getPostBySlug = cache(async function getPostBySlug(slug: string) {
   await connectToDatabase();
   return Post.findOne({ slug: slug.trim().toLowerCase() });
-}
+});
 
 interface GetPublishedPostsOptions {
   type?: PostType;
@@ -198,4 +203,16 @@ export async function getRelatedPosts(
   })
     .sort({ publishedAt: -1 })
     .limit(limit);
+}
+
+/**
+ * Admin/SEO-only: every published post's slug/type/dates for sitemap.xml —
+ * not paginated (a sitemap must list everything), but projected down to the
+ * few fields actually needed so it stays cheap as content grows.
+ */
+export async function getAllPublishedPostsForSitemap() {
+  await connectToDatabase();
+  return Post.find({ status: "PUBLISHED" })
+    .select("slug type updatedAt publishedAt")
+    .sort({ publishedAt: -1 });
 }

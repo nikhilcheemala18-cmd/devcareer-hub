@@ -10,9 +10,13 @@ import { getCategories } from "@/lib/services/categories";
 import { getTags } from "@/lib/services/tags";
 import { buildIdMap } from "@/lib/format";
 
+// Query-driven, near-duplicate content by nature — kept crawlable (see
+// robots.ts) but excluded from the index rather than disallowed, so real
+// content pages it links to still get discovered/followed.
 export const metadata: Metadata = {
   title: "Search",
   description: "Search jobs, articles, interview preparation, and system design content.",
+  robots: { index: false, follow: true },
 };
 
 export const dynamic = "force-dynamic";

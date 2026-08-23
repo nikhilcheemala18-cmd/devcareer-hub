@@ -7,11 +7,13 @@ import { getPublishedJobs } from "@/lib/services/jobs";
 import { EMPLOYMENT_TYPES, type EmploymentType } from "@/lib/db/enums";
 import { formatEnumLabel } from "@/lib/format";
 import { inputClasses, buttonClasses, cn } from "@/lib/styles";
+import { buildMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildMetadata({
   title: "Jobs",
   description: "Software engineering, backend, frontend, and internship opportunities.",
-};
+  path: "/jobs",
+});
 
 const PAGE_SIZE = 12;
 

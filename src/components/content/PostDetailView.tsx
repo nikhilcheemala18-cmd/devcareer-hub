@@ -4,12 +4,14 @@ import { ArticleHeader, type ArticleHeaderData } from "@/components/content/Arti
 import { ContentRenderer } from "@/components/content/ContentRenderer";
 import { RelatedContent } from "@/components/content/RelatedContent";
 import { PostCard, toPostCardData } from "@/components/content/PostCard";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { getPostBySlug, getRelatedPosts } from "@/lib/services/posts";
 import { getUserById } from "@/lib/services/users";
 import { getMediaById } from "@/lib/services/media";
 import { getCategories } from "@/lib/services/categories";
 import { getTags } from "@/lib/services/tags";
 import { buildIdMap } from "@/lib/format";
+import { derivePostSeoFields, buildArticleJsonLd } from "@/lib/seo";
 import type { PostType } from "@/lib/db/enums";
 
 /**
@@ -49,6 +51,20 @@ export async function PostDetailView({
   const categoryNameById = buildIdMap(categories, "name");
   const tagNameById = buildIdMap(tags, "name");
 
+  const { title: seoTitle, description: seoDescription, canonicalUrl } = derivePostSeoFields(
+    post,
+    basePath
+  );
+  const articleJsonLd = buildArticleJsonLd({
+    title: seoTitle,
+    description: seoDescription,
+    canonicalUrl,
+    publishedAt: post.publishedAt,
+    updatedAt: post.updatedAt,
+    authorName: author?.name,
+    imageUrl: media?.url,
+  });
+
   const articleData: ArticleHeaderData = {
     title: post.title,
     excerpt: post.excerpt,
@@ -65,6 +81,7 @@ export async function PostDetailView({
 
   return (
     <DetailPageContainer backHref={basePath} backLabel={backLabel}>
+      <JsonLd data={articleJsonLd} />
       <ArticleHeader article={articleData} />
       <ContentRenderer content={post.content} />
       <RelatedContent

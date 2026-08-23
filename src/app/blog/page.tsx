@@ -7,11 +7,13 @@ import { getPublishedPosts } from "@/lib/services/posts";
 import { getCategories } from "@/lib/services/categories";
 import { getTags } from "@/lib/services/tags";
 import { buildIdMap } from "@/lib/format";
+import { buildMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildMetadata({
   title: "Blog",
   description: "Developer tutorials, career guidance, and technology articles.",
-};
+  path: "/blog",
+});
 
 const PAGE_SIZE = 12;
 

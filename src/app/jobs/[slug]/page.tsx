@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { DetailPageContainer } from "@/components/content/DetailPageContainer";
 import { JobHeader } from "@/components/content/JobHeader";
@@ -6,7 +7,24 @@ import { ApplyButton } from "@/components/content/ApplyButton";
 import { ContentRenderer } from "@/components/content/ContentRenderer";
 import { RelatedContent } from "@/components/content/RelatedContent";
 import { JobCard } from "@/components/content/JobCard";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { getJobBySlug, getRelatedJobs } from "@/lib/services/jobs";
+import {
+  buildJobDetailMetadata,
+  deriveJobSeoFields,
+  buildJobPostingJsonLd,
+  plainTextFromContent,
+  isJobExpired,
+} from "@/lib/seo";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  return buildJobDetailMetadata(slug);
+}
 
 export default async function JobDetailPage({
   params,
@@ -22,8 +40,27 @@ export default async function JobDetailPage({
 
   const relatedJobs = await getRelatedJobs(job, 4);
 
+  const { canonicalUrl } = deriveJobSeoFields(job);
+  // A JobPosting is only rendered while it's genuinely open — Google
+  // penalizes structured data left on a page after validThrough has passed,
+  // and the job itself may still be PUBLISHED (visible) past its deadline
+  // if the admin hasn't archived it yet.
+  const jobJsonLd = isJobExpired(job.deadline)
+    ? null
+    : buildJobPostingJsonLd({
+        title: job.title,
+        description: plainTextFromContent(job.description, 5000),
+        canonicalUrl,
+        company: job.company,
+        location: job.location,
+        employmentType: job.employmentType,
+        publishedAt: job.publishedAt,
+        deadline: job.deadline,
+      });
+
   return (
     <DetailPageContainer backHref="/jobs" backLabel="Jobs">
+      {jobJsonLd && <JsonLd data={jobJsonLd} />}
       <JobHeader job={job} />
       <JobMeta job={job} />
 

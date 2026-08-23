@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Container } from "@/components/ui/Container";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -9,6 +10,14 @@ import { getPublishedJobs } from "@/lib/services/jobs";
 import { getPublishedPosts } from "@/lib/services/posts";
 import { getCategories } from "@/lib/services/categories";
 import { buildIdMap } from "@/lib/format";
+import { buildMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = buildMetadata({
+  title: "Jobs, Interview Preparation & Developer Resources",
+  description:
+    "Find software engineering roles, prepare for technical interviews, and learn system design and core programming concepts — all in one place.",
+  path: "/",
+});
 
 export const dynamic = "force-dynamic";
 

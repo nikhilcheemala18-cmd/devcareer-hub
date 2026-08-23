@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import type { QueryFilter, HydratedDocument } from "mongoose";
 import { connectToDatabase } from "@/lib/db/connect";
 import { Job, type JobDocument } from "@/lib/db/models/Job";
@@ -69,11 +70,15 @@ export async function getJobById(id: string) {
   return Job.findById(id);
 }
 
-/** Returns null if no job matches — callers decide how to render "not found". */
-export async function getJobBySlug(slug: string) {
+/**
+ * Returns null if no job matches — callers decide how to render "not found".
+ * Wrapped in React's cache() so generateMetadata and the page body's own
+ * fetch (same slug, same request) resolve to a single DB query, not two.
+ */
+export const getJobBySlug = cache(async function getJobBySlug(slug: string) {
   await connectToDatabase();
   return Job.findOne({ slug: slug.trim().toLowerCase() });
-}
+});
 
 interface GetPublishedJobsOptions {
   location?: string;
@@ -199,4 +204,16 @@ export async function getRelatedJobs(
   })
     .sort({ publishedAt: -1 })
     .limit(limit);
+}
+
+/**
+ * Admin/SEO-only: every published job's slug/dates for sitemap.xml — not
+ * paginated (a sitemap must list everything), projected to the few fields
+ * actually needed.
+ */
+export async function getAllPublishedJobsForSitemap() {
+  await connectToDatabase();
+  return Job.find({ status: "PUBLISHED" })
+    .select("slug updatedAt publishedAt")
+    .sort({ publishedAt: -1 });
 }
