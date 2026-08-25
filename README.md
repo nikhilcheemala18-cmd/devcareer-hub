@@ -105,3 +105,7 @@ There is no registration, password reset, or admin-management UI yet — the onl
 ## Environment Variables
 
 See [.env.example](./.env.example) for the current list of environment variables. `MONGODB_URI`, `AUTH_SECRET`, and the `SEED_ADMIN_*` values are secrets/local-only and must never be committed — `.env.local` is already gitignored.
+
+## Project Status
+
+This project is under active development, with ongoing improvements to content publishing, job listings, SEO, and application features.
