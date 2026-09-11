@@ -9,3 +9,9 @@ export async function getUserById(id: string) {
   await connectToDatabase();
   return User.findById(id);
 }
+
+/** Returns the oldest admin user, used as the author for server-to-server automation drafts. */
+export async function getFirstAdminUser() {
+  await connectToDatabase();
+  return User.findOne({ role: "ADMIN" }).sort({ createdAt: 1 });
+}
